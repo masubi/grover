@@ -34,7 +34,7 @@ FLAGS = flags.FLAGS
 
 ## Required parameters
 flags.DEFINE_string(
-    "config_file", 'configs/base.json',
+    "config_file", 'lm/configs/base.json',
     "The config json file corresponding to the pre-trained news model. "
     "This specifies the model architecture.")
 
@@ -142,29 +142,32 @@ def main(_):
     # These lines of code are just to check if we've already saved something into the directory
     if tf.gfile.Exists(FLAGS.output_dir):
         print(f"The output directory {FLAGS.output_dir} exists!")
-        if FLAGS.do_train:
-            print("EXITING BECAUSE DO_TRAIN is true", flush=True)
-            return
+        #if FLAGS.do_train:
+        #    print("EXITING BECAUSE DO_TRAIN is true", flush=True)
+        #       return
         for split in ['val', 'test']:
             if tf.gfile.Exists(os.path.join(FLAGS.output_dir, f'{split}-probs.npy')) and getattr(FLAGS,
                                                                                                  f'predict_{split}'):
                 print(f"EXITING BECAUSE {split}-probs.npy exists", flush=True)
                 return
         # Double check to see if it has trained!
-        if not tf.gfile.Exists(os.path.join(FLAGS.output_dir, 'checkpoint')):
-            print("EXITING BECAUSE NO CHECKPOINT.", flush=True)
-            return
+        #if not tf.gfile.Exists(os.path.join(FLAGS.output_dir, 'checkpoint')):
+        #    print("EXITING BECAUSE NO CHECKPOINT.", flush=True)
+        #    return
         stuff = {}
+        '''
         with tf.gfile.Open(os.path.join(FLAGS.output_dir, 'checkpoint'), 'r') as f:
             # model_checkpoint_path: "model.ckpt-0"
             # all_model_checkpoint_paths: "model.ckpt-0"
             for l in f:
                 key, val = l.strip().split(': ', 1)
                 stuff[key] = val.strip('"')
+                print("HERE:"+stuff['model_checkpoint_path'])
+
         if stuff['model_checkpoint_path'] == 'model.ckpt-0':
             print("EXITING BECAUSE IT LOOKS LIKE NOTHING TRAINED", flush=True)
             return
-
+        '''
 
     elif not FLAGS.do_train:
         print("EXITING BECAUSE DO_TRAIN IS FALSE AND PATH DOESNT EXIST")
@@ -236,7 +239,9 @@ def main(_):
 
     # Training
     if FLAGS.do_train:
-        num_train_steps = int((len(examples['train']) / FLAGS.batch_size) * FLAGS.num_train_epochs)
+        print("examples: " + str(len(examples['train'])))
+        #num_train_steps = int((len(examples['train']) / FLAGS.batch_size) * FLAGS.num_train_epochs)
+        num_train_steps = int((len(examples['train']) / 2) * FLAGS.num_train_epochs)
         num_warmup_steps = int(num_train_steps * FLAGS.warmup_proportion)
         assert num_train_steps > 0
     else:
@@ -254,6 +259,7 @@ def main(_):
         cluster=tpu_cluster_resolver,
         master=FLAGS.master,
         model_dir=FLAGS.output_dir,
+        #model_dir="./discrimination/output/checkpoint/",
         save_checkpoints_steps=FLAGS.iterations_per_loop,
         keep_checkpoint_max=None,
         tpu_config=tf.contrib.tpu.TPUConfig(
